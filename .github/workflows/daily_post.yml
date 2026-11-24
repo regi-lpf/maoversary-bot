@@ -1,0 +1,43 @@
+name: Maoversary Daily Post
+
+on:
+  schedule:
+    # Todos os dias às 12:00 UTC (09:00 no horário de Brasília, UTC-3)
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Data opcional no formato MM-DD (ex: 11-24)"
+        required: false
+        default: ""
+
+jobs:
+  post-quote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar fontes e dependências
+        run: |
+          sudo apt-get update && sudo apt-get install -y fonts-dejavu-core fonts-liberation
+          pip install -r requirements.txt
+
+      - name: Publicar citação do dia no X
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python bot.py --date "${{ github.event.inputs.date }}"
+          else
+            python bot.py
+          fi
